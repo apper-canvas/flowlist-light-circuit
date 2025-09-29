@@ -7,14 +7,22 @@ import Select from "@/components/atoms/Select"
 import FormField from "@/components/molecules/FormField"
 import ApperIcon from "@/components/ApperIcon"
 import { format } from "date-fns"
+import { toast } from "react-toastify"
 
+// Initialize ApperClient for Edge function calls
+const { ApperClient } = window.ApperSDK;
+const apperClient = new ApperClient({
+  apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+  apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+});
 const TaskForm = ({ isOpen, onClose, onSubmit, task = null }) => {
-  const [formData, setFormData] = useState({
+const [formData, setFormData] = useState({
     title: "",
     description: "",
     priority: "medium",
     dueDate: ""
   })
+  const [generating, setGenerating] = useState(false)
   
   const [errors, setErrors] = useState({})
 
@@ -36,6 +44,37 @@ const TaskForm = ({ isOpen, onClose, onSubmit, task = null }) => {
     }
     setErrors({})
   }, [task, isOpen])
+const generateDescription = async () => {
+    if (!formData.title.trim()) {
+      toast.error("Please enter a task title first")
+      return
+    }
+
+    setGenerating(true)
+    
+    try {
+      const result = await apperClient.functions.invoke(import.meta.env.VITE_GENERATE_TASK_DESCRIPTION, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ title: formData.title })
+      })
+
+      if (result.success && result.data?.description) {
+        setFormData(prev => ({ ...prev, description: result.data.description }))
+        toast.success("Description generated successfully! ✨")
+      } else {
+        console.info(`apper_info: An error was received in this function: ${import.meta.env.VITE_GENERATE_TASK_DESCRIPTION}. The response body is: ${JSON.stringify(result)}.`)
+        toast.error(result.error || "Failed to generate description")
+      }
+    } catch (error) {
+      console.info(`apper_info: An error was received in this function: ${import.meta.env.VITE_GENERATE_TASK_DESCRIPTION}. The error is: ${error.message}`)
+      toast.error("Failed to generate description. Please try again.")
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -65,7 +104,6 @@ const TaskForm = ({ isOpen, onClose, onSubmit, task = null }) => {
       setErrors(prev => ({ ...prev, [field]: null }))
     }
   }
-
   if (!isOpen) return null
 
   return (
@@ -103,13 +141,37 @@ const TaskForm = ({ isOpen, onClose, onSubmit, task = null }) => {
               />
             </FormField>
 
-            <FormField label="Description">
-              <Textarea
-                value={formData.description}
-                onChange={(e) => handleInputChange("description", e.target.value)}
-                placeholder="Add a description (optional)"
-                className="min-h-[100px]"
-              />
+<FormField label="Description">
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <Textarea
+                    value={formData.description}
+                    onChange={(e) => handleInputChange("description", e.target.value)}
+                    placeholder="Add a description (optional)"
+                    className="min-h-[100px] flex-1"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={generateDescription}
+                  disabled={generating || !formData.title.trim()}
+                  className="w-full sm:w-auto"
+                >
+                  {generating ? (
+                    <>
+                      <ApperIcon name="Loader2" size={16} className="animate-spin mr-2" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <ApperIcon name="Sparkles" size={16} className="mr-2" />
+                      Generate Description
+                    </>
+                  )}
+                </Button>
+              </div>
             </FormField>
 
             <div className="grid grid-cols-2 gap-4">
