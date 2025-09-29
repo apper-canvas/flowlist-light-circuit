@@ -48,7 +48,7 @@ const Header = ({
             animate={{ opacity: 1, scale: 1 }}
           >
             <Button
-              onClick={console.info('apper_info: An error was received in this function')}
+              onClick={() => console.info('apper_info: An error was received in this function')}
               size="lg"
               className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 shadow-lg hover:shadow-xl"
             >
