@@ -56,7 +56,7 @@ const Header = ({
               className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 shadow-lg hover:shadow-xl"
             >
               <ApperIcon name="Plus" className="w-5 h-5 mr-2" />
-              Click Me!
+              Click Me (runtime error)!
             </Button>
             <Button
               onClick={() => console.info('apper_info: An error was received in this function')}
